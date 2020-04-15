@@ -16,9 +16,11 @@ uint8_t display_values [4] = {0, 0, 0, 0}; // going around - filling up
 uint8_t digits [10] = {0b01111110, 0b00001100, 0b10110110, 0b10011110, 0b11001100,
 0b11011010, 0b11111010, 0b00001110, 0b11111110, 0b11011110}; // 7 segment display digits
 uint8_t actual_display_digits [4] = {0b0000001, 0b00000010, 0b00000100, 0b00010000};
-uint8_t display_value=0, actual_display_index = 0, USARTReadBuffer = 0, low = 0,
-high = 0, voltage = 0, T0 = 298, B = 3797, R0 = 10000, T = 0;
-float AREF = 4.83;
+uint8_t display_value=0, actual_display_index = 0, USARTReadBuffer = 0;
+int T0 = 298;
+int B = 3797;
+int R0 = 10000;
+int T = 0;
 float CURRENT = 0.04;
 
 void PortInit();
@@ -29,7 +31,7 @@ void Init_TC0_MULTIPLEX();
 void Init_TC2_MOTOR();
 void UpdadeSeconds();
 void ModeCheck();
-void getNumbers(uint8_t T);
+void getNumbers(int T);
 void Init_ADC();
 void updateMotor();
 uint16_t ADC_Read();
@@ -41,14 +43,13 @@ int main(void)
 	USARTInit();
 	Init_TC1_MM_SS();
 	Init_TC0_MULTIPLEX();
-	Init_TC2_MOTOR();
 	Init_ADC();
 	
 	sei ();
 	
 	while (1)
 	{
-		ModeCheck();	
+		ModeCheck();
 	}
 }
 
@@ -101,7 +102,6 @@ void Init_TC1_MM_SS(){
 
 void Init_TC2_MOTOR() {
 	TCNT2 = 0; //set timer counter 1 to 0
-	OCR2A = 30;//15625;//8000;//15625
 	//enable OUTPUT COMPARE MATCH A in TIMSK1 reg
 	TIMSK2 = (1 << OCIE2A);
 	//TC1 for fast PWM
@@ -139,21 +139,33 @@ ISR (TIMER0_COMPA_vect) {
 
 ISR (TIMER1_COMPA_vect){
 	uint16_t voltage = ADC_Read();
-	T = SteinhartHartCalculation(voltage);
+	int T = SteinhartHartCalculation(voltage);
+	//int T = 99;
+	//int T = 31;
 	getNumbers(T);
-	updateMotor();
+	updateMotor(T);
 }
 
 ISR (TIMER2_COMPA_vect){
-	//PORTD = PORTD | 0b00001000;
-	PORTB ^= (1<<  PORTB3);
+	PORTB |= (1<<  PORTB3);
 }
 
 /*^^-----------ISR----------------*/
 ModeCheck() {
-	if (USARTReadBuffer == 'y') {
-		PORTB ^= (1<<  PORTB5);
-	}
+	switch (USARTReadBuffer) {
+		case 'y':
+			PORTB ^= (1<<  PORTB5);
+			break;
+		case '0':
+		ADMUX = (1 << REFS0);
+		break;
+		case '1':
+		ADMUX = (1 << REFS0) |(1 << MUX0);
+		break;
+		case '2':
+		ADMUX = (1 << REFS0) | (1 << MUX1);
+		break;		
+	}	
 }
 
 uint16_t ADC_Read() {
@@ -179,10 +191,11 @@ void UpdadeSeconds() {
 int SteinhartHartCalculation(uint16_t voltage){
 	double voltageVolts = (voltage * 5)/1023;
 	double resistance = voltageVolts/CURRENT;
-	return (T0 * B/(T0 * log(resistance/R0)+B));
+	//return ((T0 * B)/(T0 * log(resistance/R0)+B));
+	return voltageVolts * 15;
 }
 
-void getNumbers(uint8_t T) {
+void getNumbers(int T) {
  	int i;
 	for (i = 0; i< 3; i++) {
 		int digit = T % 10;
@@ -191,6 +204,34 @@ void getNumbers(uint8_t T) {
 	}
 }
 
-void updateMotor(){
-	OCR2A = 40000000;
+void updateMotor(int T){
+	/*if (T <= 30) {
+		TIMSK2 = (0 << OCIE2A);
+	}
+	else  {*/
+		//if (T > 30) {
+			if (T > 10) {
+			OCR2A = 179;
+		} 
+		else if (T > 20) {
+		OCR2A = 153;
+		
+		}
+		else if (T > 30) {
+		OCR2A = 155;
+		}
+		else if (T > 40) {
+			OCR2A = 128;
+		}
+		else if (T > 50) {
+			OCR2A = 77;
+		}
+		else if (T > 80) {
+			OCR2A = 51;
+		}
+		else if (T > 90 && T < 100) {
+			OCR2A = 1;
+		}
+		Init_TC2_MOTOR();
+	//}
 }
