@@ -32,8 +32,8 @@ void ModeCheck();
 void getNumbers(uint8_t T);
 void Init_ADC();
 void updateMotor();
-int ADC_Read();
-int SteinhartHartCalculation(uint8_t voltage);
+uint16_t ADC_Read();
+int SteinhartHartCalculation(uint16_t voltage);
 
 int main(void)
 {
@@ -126,7 +126,6 @@ void Init_ADC() {
 /*-------------ISR----------------*/
 ISR(USART_RX_vect) {
 	USARTReadBuffer = UDR0; // UDR - USART Data Register
-	PORTB ^= (1<<  PORTB5);
 }
 
 ISR (TIMER0_COMPA_vect) {
@@ -139,7 +138,7 @@ ISR (TIMER0_COMPA_vect) {
 
 
 ISR (TIMER1_COMPA_vect){
-	voltage = ADC_Read();
+	uint16_t voltage = ADC_Read();
 	T = SteinhartHartCalculation(voltage);
 	getNumbers(T);
 	updateMotor();
@@ -152,12 +151,12 @@ ISR (TIMER2_COMPA_vect){
 
 /*^^-----------ISR----------------*/
 ModeCheck() {
-	if (USARTReadBuffer == '1') {
+	if (USARTReadBuffer == 'y') {
 		PORTB ^= (1<<  PORTB5);
 	}
 }
 
-int ADC_Read() {
+uint16_t ADC_Read() {
 	//low = ADCL;
 	//high = ADCH;
 	//return ADCL | (ADCH << 8);
@@ -177,8 +176,8 @@ void UpdadeSeconds() {
 	DisplaySeconds(display_value);
 }
 
-int SteinhartHartCalculation(uint8_t voltage){
-	double voltageVolts = (voltage * AREF)/1024;
+int SteinhartHartCalculation(uint16_t voltage){
+	double voltageVolts = (voltage * 5)/1023;
 	double resistance = voltageVolts/CURRENT;
 	return (T0 * B/(T0 * log(resistance/R0)+B));
 }
