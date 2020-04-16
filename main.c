@@ -20,8 +20,7 @@ uint8_t display_value=0, actual_display_index = 0, USARTReadBuffer = 0;
 int T0 = 298;
 int B = 3797;
 int R0 = 10000;
-int T = 0;
-float CURRENT = 0.04;
+float CURRENT = 0.00025;
 
 void PortInit();
 void DisplayNumbers();
@@ -43,6 +42,7 @@ int main(void)
 	USARTInit();
 	Init_TC1_MM_SS();
 	Init_TC0_MULTIPLEX();
+	Init_TC2_MOTOR();
 	Init_ADC();
 	
 	sei ();
@@ -103,7 +103,7 @@ void Init_TC1_MM_SS(){
 void Init_TC2_MOTOR() {
 	TCNT2 = 0; //set timer counter 1 to 0
 	//enable OUTPUT COMPARE MATCH A in TIMSK1 reg
-	TIMSK2 = (1 << OCIE2A);
+	//TIMSK2 = (1 << OCIE2A);
 	//TC1 for fast PWM
 	//SET waveform generators in  timer/counter control registers
 	TCCR2A = ( 1 <<WGM21) | (1<< WGM20);
@@ -147,7 +147,7 @@ ISR (TIMER1_COMPA_vect){
 }
 
 ISR (TIMER2_COMPA_vect){
-	PORTB |= (1<<  PORTB3);
+	PORTB ^= (1<<  PORTB3);
 }
 
 /*^^-----------ISR----------------*/
@@ -191,8 +191,8 @@ void UpdadeSeconds() {
 int SteinhartHartCalculation(uint16_t voltage){
 	double voltageVolts = (voltage * 5)/1023;
 	double resistance = voltageVolts/CURRENT;
-	//return ((T0 * B)/(T0 * log(resistance/R0)+B));
-	return voltageVolts * 15;
+	return ((T0 * B)/((T0 * log(resistance/R0))+B));
+	//return voltageVolts * 4;
 }
 
 void getNumbers(int T) {
@@ -205,33 +205,49 @@ void getNumbers(int T) {
 }
 
 void updateMotor(int T){
-	/*if (T <= 30) {
+	int lim1 = 10;
+	int lim2 = 11;
+	int lim3 = 12;
+	int lim4 = 13;
+	int lim5 = 14;
+	int lim6 = 17;
+	int lim7 = 20;
+	int lim8 = 23;
+	/*int lim1 = 30;
+	int lim2 = 40;
+	int lim3 = 50;
+	int lim4 = 60;
+	int lim5 = 70;
+	int lim6 = 80;
+	int lim7 = 90;
+	int lim8 = 100;*/
+	if (T <= lim1) {
 		TIMSK2 = (0 << OCIE2A);
 	}
-	else  {*/
+	else  {
 		//if (T > 30) {
-			if (T > 10) {
-			OCR2A = 179;
+			if (T > lim1 && T < lim2) {
+			OCR2A = 153;
 		} 
-		else if (T > 20) {
-		OCR2A = 153;
+		else if (T > lim2 && T < lim3) {
+		OCR2A = 128;
 		
 		}
-		else if (T > 30) {
-		OCR2A = 155;
+		else if (T > lim3 && T < lim4) {
+		OCR2A = 102;
 		}
-		else if (T > 40) {
-			OCR2A = 128;
-		}
-		else if (T > 50) {
+		else if (T > lim4 && T < lim5) {
 			OCR2A = 77;
 		}
-		else if (T > 80) {
+		else if (T > lim5 && T < lim6) {
 			OCR2A = 51;
 		}
-		else if (T > 90 && T < 100) {
+		else if (T > lim6 && T < lim7) {
+			OCR2A = 26;
+		}
+		else if (T > lim7 && T < lim8) {
 			OCR2A = 1;
 		}
-		Init_TC2_MOTOR();
-	//}
+		TIMSK2 = (1 << OCIE2A);
+	}
 }
