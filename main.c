@@ -22,6 +22,14 @@ int B = 3797;
 int R0 = 10000;
 float CURRENT = 0.00025;
 
+int ocra_val_40 = 102;
+int ocra_val_50 = 128;
+int ocra_val_60 = 153;
+int ocra_val_70 = 179;
+int ocra_val_80 = 204;
+int ocra_val_90 = 230;
+int ocra_val_100 = 255;
+
 void PortInit();
 void DisplayNumbers();
 void USARTInit();
@@ -165,6 +173,33 @@ ModeCheck() {
 		case '2':
 		ADMUX = (1 << REFS0) | (1 << MUX1);
 		break;		
+		case 'a':
+		OCR2A = ocra_val_40;
+		break;
+		case 'b':
+		OCR2A = ocra_val_50;
+		break;
+		case 'c':
+		OCR2A = ocra_val_60;
+		break;
+		case 'd':
+		OCR2A = ocra_val_70;
+		break;
+		case 'f':
+		OCR2A = ocra_val_80;
+		break;
+		case 'g':
+		OCR2A = ocra_val_90;
+		break;
+		case 'h':
+		OCR2A = ocra_val_100;
+		break;
+		case 'z':
+		TIMSK2 = (0 << OCIE2A);
+		break;
+		case 'x':
+		TIMSK2 = (1 << OCIE2A);
+		break;
 	}	
 }
 
@@ -174,7 +209,7 @@ uint16_t ADC_Read() {
 	//return ADCL | (ADCH << 8);
 	//ADMUX = (1<<REFS0);
 	ADCSRA |= (1<< ADSC);
-	//while (ADCSRA & (1<<ADSC)) {};
+	while (ADCSRA & (1<<ADSC)) {};
 	return ADCW; 
 }
 
@@ -213,6 +248,13 @@ void updateMotor(int T){
 	int lim6 = 17;
 	int lim7 = 20;
 	int lim8 = 23;
+// 	int ocra_val_40 = 102;
+// 	int ocra_val_50 = 128;
+// 	int ocra_val_60 = 153;
+// 	int ocra_val_70 = 179;
+// 	int ocra_val_80 = 204;
+// 	int ocra_val_90 = 230;
+// 	int ocra_val_100 = 255;
 	/*int lim1 = 30;
 	int lim2 = 40;
 	int lim3 = 50;
@@ -227,26 +269,25 @@ void updateMotor(int T){
 	else  {
 		//if (T > 30) {
 			if (T > lim1 && T < lim2) {
-			OCR2A = 153;
+			OCR2A = ocra_val_40;
 		} 
 		else if (T > lim2 && T < lim3) {
-		OCR2A = 128;
-		
+		OCR2A = ocra_val_50;
 		}
 		else if (T > lim3 && T < lim4) {
-		OCR2A = 102;
+		OCR2A = ocra_val_60;
 		}
 		else if (T > lim4 && T < lim5) {
-			OCR2A = 77;
+			OCR2A = ocra_val_70;
 		}
 		else if (T > lim5 && T < lim6) {
-			OCR2A = 51;
+			OCR2A = ocra_val_80;
 		}
 		else if (T > lim6 && T < lim7) {
-			OCR2A = 26;
+			OCR2A = ocra_val_90;
 		}
 		else if (T > lim7 && T < lim8) {
-			OCR2A = 1;
+			OCR2A = ocra_val_100;
 		}
 		TIMSK2 = (1 << OCIE2A);
 	}
